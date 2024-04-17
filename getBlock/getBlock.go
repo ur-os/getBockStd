@@ -53,7 +53,7 @@ func (g *GetBlock) GetTop5Addresses() []aggregation.TopAddresses {
 
 	wgPulling := &sync.WaitGroup{}
 
-	for i := 0; i < depth; i += blockPullingStep {
+	for i := 0; i < depth; i += someWeight {
 		wgPulling.Add(1)
 		go g.processBlock(wgPulling, chTransactions)
 	}
@@ -127,8 +127,6 @@ func (g *GetBlock) repullBlocks(ctx context.Context, wg *sync.WaitGroup, require
 	}
 
 	if len(requiredBlocks[:len(requiredBlocks)/2]) != 0 {
-		//fmt.Printf("left slice: %v\n\n", requiredBlocks[:len(requiredBlocks)/2])
-
 		number, _ = time.ParseDuration(strconv.Itoa(rand.Int() % 3))
 		time.Sleep(number * time.Second)
 		blocksLeft, err := requests.GetConcreteBlocksByNumber(
@@ -142,7 +140,6 @@ func (g *GetBlock) repullBlocks(ctx context.Context, wg *sync.WaitGroup, require
 
 		failedLeft := make([]string, 0, len(blocksLeft))
 		for _, block := range blocksLeft {
-			fmt.Printf("json decode, error in struct: code %d, message %s\n", block.Error.Code, block.Error.Message)
 
 			if block.Result.Hash == "" {
 				failedLeft = append(failedLeft, block.ID)
@@ -159,8 +156,6 @@ func (g *GetBlock) repullBlocks(ctx context.Context, wg *sync.WaitGroup, require
 	}
 
 	if len(requiredBlocks[len(requiredBlocks)/2:]) != 0 {
-		//fmt.Printf("right slice: %v\n\n", requiredBlocks[len(requiredBlocks)/2:])
-
 		number, _ = time.ParseDuration(strconv.Itoa(rand.Int() % 3))
 		time.Sleep(number * time.Second)
 		blocksRight, err := requests.GetConcreteBlocksByNumber(
@@ -174,7 +169,6 @@ func (g *GetBlock) repullBlocks(ctx context.Context, wg *sync.WaitGroup, require
 
 		failedRight := make([]string, 0, len(blocksRight))
 		for _, block := range blocksRight {
-			fmt.Printf("json decode, error in struct: code %d, message %s\n", block.Error.Code, block.Error.Message)
 
 			if block.Result.Hash == "" {
 				failedRight = append(failedRight, block.ID)

@@ -12,7 +12,7 @@ import (
 )
 
 func doNodeRequest(body interface{}, nodeEndpoint string) (*http.Response, error) {
-	requestBodyBytes, err := json.Marshal(&body)
+	requestBodyBytes, err := json.MarshalIndent(&body, "", "\t")
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func doNodeRequest(body interface{}, nodeEndpoint string) (*http.Response, error
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Length", strconv.Itoa(len(requestBodyBytes)))
 	req.Header.Set("Accept", "*/*")
-	//req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	//req.Header.Set("User-Agent", "PostmanRuntime/7.37.3")
 	req.Header.Set("Connection", "keep-alive")
 
 	client := &http.Client{}
