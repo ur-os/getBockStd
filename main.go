@@ -11,9 +11,9 @@ import (
 func main() {
 	os.Getenv("API_KEY")
 
-	nodeEndpoint := "https://go.getblock.io/e3c21d46fb4545d6bff3df29c42fd4a0"
+	//nodeEndpoint := "https://go.getblock.io/e3c21d46fb4545d6bff3df29c42fd4a0"
 
-	//nodeEndpoint := "https://api.securerpc.com/v1"
+	nodeEndpoint := "https://rpc.mevblocker.io"
 	_ = nodeEndpoint
 
 	start := time.Now()

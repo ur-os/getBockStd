@@ -16,7 +16,7 @@ func GetBlockNumber(nodeEndpoint string, client *http.Client) (blockNumber *big.
 		ID:      "blockNumber",
 	}
 
-	resp, err := doNodeRequest(requestBody, nodeEndpoint, client)
+	resp, err := doNodeRequest(requestBody, nodeEndpoint)
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ func GetBlocksByNumber(
 		})
 	}
 
-	resp, err := doNodeRequest(batchRequestBody, nodeEndpoint, client)
+	resp, err := doNodeRequest(batchRequestBody, nodeEndpoint)
 	if err != nil {
 		return nil, err
 	}

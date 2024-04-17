@@ -7,8 +7,10 @@ import (
 	"getBlock/getBlock/processing"
 	"getBlock/getBlock/requests"
 	"getBlock/getBlock/vault"
+	"math/rand"
 	"net/http"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -28,15 +30,17 @@ func New(nodeEndpoint string) *GetBlock {
 	}
 }
 
-const depth = 50
+const top5 = 5
+
+const depth = 100
+const blockPullingStep = 4
+
 const someWeight = 1
 
 var maxParallels = someWeight * runtime.GOMAXPROCS(0)
 
-const five = 5
-const blockPullingStep = 100
-const rpsLimiter = 10 * time.Millisecond
-const repullTimeout = 60 * time.Second
+const rpsLimiter = 500 * time.Millisecond
+const repullTimeout = 30 * time.Second
 
 func (g *GetBlock) GetTop5Addresses() []aggregation.TopAddresses {
 	latestBlock, err := requests.GetBlockNumber(g.nodeEndpoint, g.client)
@@ -68,7 +72,7 @@ func (g *GetBlock) GetTop5Addresses() []aggregation.TopAddresses {
 
 	wgPulling.Wait()
 
-	topFive, err := aggregation.GetTopAddresses(five, g.vault.GetVault())
+	topFive, err := aggregation.GetTopAddresses(top5, g.vault.GetVault())
 	if err != nil {
 		fmt.Printf("Unable to execute request. Reason: %s", err.Error())
 	}
@@ -107,22 +111,28 @@ func (g *GetBlock) pullBlocks(wg *sync.WaitGroup, fromBlock, toBlock int64, chTx
 func (g *GetBlock) repullBlocks(ctx context.Context, wg *sync.WaitGroup, requiredBlocks []string, chTxs chan<- []requests.Transaction) {
 	defer wg.Done()
 
-	time.Sleep(1 * time.Second)
 	select {
 	case <-ctx.Done():
-		fmt.Printf("Unable to repull blocks. Reason: %v\n", ctx.Err())
+		fmt.Printf("Unable to repull blocks %v. Reason: %v\n", requiredBlocks, ctx.Err())
 		return
 	default:
 		break
 	}
 
+	number, _ := time.ParseDuration(strconv.Itoa(rand.Int() % 3))
+	time.Sleep(number * time.Second)
+
 	if len(requiredBlocks) == 0 {
 		return
 	}
 
-	if len(requiredBlocks) == 1 {
-		blocks, err := requests.GetConcreteBlocksByNumber(
-			requiredBlocks,
+	if len(requiredBlocks[:len(requiredBlocks)/2]) != 0 {
+		//fmt.Printf("left slice: %v\n\n", requiredBlocks[:len(requiredBlocks)/2])
+
+		number, _ = time.ParseDuration(strconv.Itoa(rand.Int() % 3))
+		time.Sleep(number * time.Second)
+		blocksLeft, err := requests.GetConcreteBlocksByNumber(
+			requiredBlocks[:len(requiredBlocks)/2],
 			g.nodeEndpoint,
 			g.client,
 		)
@@ -130,72 +140,54 @@ func (g *GetBlock) repullBlocks(ctx context.Context, wg *sync.WaitGroup, require
 			fmt.Printf("Unable to repull blocks %v. Reason: %s", len(requiredBlocks)/2, err.Error())
 		}
 
-		failed := make([]string, 0, len(blocks))
-		for _, block := range blocks {
+		failedLeft := make([]string, 0, len(blocksLeft))
+		for _, block := range blocksLeft {
+			fmt.Printf("json decode, error in struct: code %d, message %s\n", block.Error.Code, block.Error.Message)
+
 			if block.Result.Hash == "" {
-				failed = append(failed, block.ID)
+				failedLeft = append(failedLeft, block.ID)
 				continue
 			}
 
 			chTxs <- block.Result.Transactions
 		}
 
-		if len(failed) != 0 {
+		if len(failedLeft) != 0 {
 			wg.Add(1)
-			go g.repullBlocks(ctx, wg, failed, chTxs)
+			go g.repullBlocks(ctx, wg, failedLeft, chTxs)
+		}
+	}
+
+	if len(requiredBlocks[len(requiredBlocks)/2:]) != 0 {
+		//fmt.Printf("right slice: %v\n\n", requiredBlocks[len(requiredBlocks)/2:])
+
+		number, _ = time.ParseDuration(strconv.Itoa(rand.Int() % 3))
+		time.Sleep(number * time.Second)
+		blocksRight, err := requests.GetConcreteBlocksByNumber(
+			requiredBlocks[len(requiredBlocks)/2:],
+			g.nodeEndpoint,
+			g.client,
+		)
+		if err != nil {
+			fmt.Printf("Unable to repull blocks %v. Reason: %s", len(requiredBlocks)/2, err.Error())
 		}
 
-		return
-	}
+		failedRight := make([]string, 0, len(blocksRight))
+		for _, block := range blocksRight {
+			fmt.Printf("json decode, error in struct: code %d, message %s\n", block.Error.Code, block.Error.Message)
 
-	fmt.Printf("left slice: %v\n\n", requiredBlocks[:len(requiredBlocks)/2])
-	blocksLeft, err := requests.GetConcreteBlocksByNumber(
-		requiredBlocks[:len(requiredBlocks)/2],
-		g.nodeEndpoint,
-		g.client,
-	)
-	if err != nil {
-		fmt.Printf("Unable to repull blocks %v. Reason: %s", len(requiredBlocks)/2, err.Error())
-	}
+			if block.Result.Hash == "" {
+				failedRight = append(failedRight, block.ID)
+				continue
+			}
 
-	failedLeft := make([]string, 0, len(blocksLeft))
-	for _, block := range blocksLeft {
-		if block.Result.Hash == "" {
-			failedLeft = append(failedLeft, block.ID)
-			continue
+			chTxs <- block.Result.Transactions
 		}
 
-		chTxs <- block.Result.Transactions
-	}
-
-	if len(failedLeft) != 0 {
-		wg.Add(1)
-		go g.repullBlocks(ctx, wg, failedLeft, chTxs)
-	}
-
-	fmt.Printf("right slice: %v\n\n", requiredBlocks[len(requiredBlocks)/2:])
-	blocksRight, err := requests.GetConcreteBlocksByNumber(
-		requiredBlocks[len(requiredBlocks)/2:],
-		g.nodeEndpoint,
-		g.client,
-	)
-	if err != nil {
-		fmt.Printf("Unable to repull blocks %v. Reason: %s", len(requiredBlocks)/2, err.Error())
-	}
-
-	failedRight := make([]string, 0, len(blocksRight))
-	for _, block := range blocksRight {
-		if block.Result.Hash == "" {
-			failedRight = append(failedRight, block.ID)
-			continue
+		if len(failedRight) != 0 {
+			wg.Add(1)
+			go g.repullBlocks(ctx, wg, failedRight, chTxs)
 		}
-
-		chTxs <- block.Result.Transactions
-	}
-
-	if len(failedRight) != 0 {
-		wg.Add(1)
-		go g.repullBlocks(ctx, wg, failedRight, chTxs)
 	}
 }
 
@@ -204,7 +196,6 @@ func (g *GetBlock) processBlock(wg *sync.WaitGroup, chTransactions <-chan []requ
 
 	for transactions := range chTransactions {
 		for _, transaction := range transactions {
-			fmt.Printf("Processing transaction %s", transaction.Hash)
 			from, to := processing.ParseInput(transaction.Input)
 
 			if from == "" && to == "" {
