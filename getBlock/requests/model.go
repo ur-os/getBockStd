@@ -14,8 +14,12 @@ type ResponseBlockNumber struct {
 }
 
 type ResponseBlockByNumber struct {
-	Jsonrpc string `json:"jsonrpc"`
-	ID      string `json:"id"`
+	Error struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	} `json:"error,omitempty"`
+	Jsonrpc string `json:"jsonrpc,omitempty"`
+	ID      string `json:"id,omitempty"`
 	Result  struct {
 		BaseFeePerGas         string        `json:"baseFeePerGas"`
 		BlobGasUsed           string        `json:"blobGasUsed"`
@@ -48,7 +52,7 @@ type ResponseBlockByNumber struct {
 			Amount         string `json:"amount"`
 		} `json:"withdrawals"`
 		WithdrawalsRoot string `json:"withdrawalsRoot"`
-	} `json:"result"`
+	} `json:"result,omitempty"`
 }
 
 type Transaction struct {

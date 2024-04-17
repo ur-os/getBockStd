@@ -13,7 +13,7 @@ func GetBlockNumber(nodeEndpoint string, client *http.Client) (blockNumber *big.
 		Jsonrpc: "2.0",
 		Method:  "eth_blockNumber",
 		Params:  make([]interface{}, 0),
-		ID:      "getblock.io",
+		ID:      "blockNumber",
 	}
 
 	resp, err := doNodeRequest(requestBody, nodeEndpoint, client)

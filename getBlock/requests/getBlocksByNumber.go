@@ -14,7 +14,7 @@ func GetBlocksByNumber(
 	nodeEndpoint string,
 	client *http.Client,
 ) (blocks []ResponseBlockByNumber, err error) {
-	batchRequestBody := make([]Request, toBlock-fromBlock)
+	batchRequestBody := make([]Request, 0, toBlock-fromBlock)
 
 	for blockNumb := fromBlock; blockNumb < toBlock; blockNumb++ {
 		params := make([]interface{}, 2)
@@ -25,7 +25,7 @@ func GetBlocksByNumber(
 			Jsonrpc: "2.0",
 			Method:  "eth_getBlockByNumber",
 			Params:  params,
-			ID:      "getblock.io",
+			ID:      fmt.Sprintf("0x%x", blockNumb),
 		})
 	}
 

@@ -3,18 +3,17 @@ package main
 import (
 	"fmt"
 	"getBlock/getBlock"
-	"log"
-	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"time"
 )
 
 func main() {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	os.Getenv("API_KEY")
 
-	nodeEndpoint := "https://go.getblock.io/bd9745e549b34652a20fb8cbf5f10bbf"
+	nodeEndpoint := "https://go.getblock.io/e3c21d46fb4545d6bff3df29c42fd4a0"
+
+	//nodeEndpoint := "https://api.securerpc.com/v1"
 	_ = nodeEndpoint
 
 	start := time.Now()
