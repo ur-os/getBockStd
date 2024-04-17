@@ -13,7 +13,7 @@ type ResponseBlockNumber struct {
 	Result  string `json:"result"`
 }
 
-type BlockByNumberResponse struct {
+type ResponseBlockByNumber struct {
 	Jsonrpc string `json:"jsonrpc"`
 	ID      string `json:"id"`
 	Result  struct {

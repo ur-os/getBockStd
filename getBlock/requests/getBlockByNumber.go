@@ -9,23 +9,32 @@ import (
 const blockNumber = 0
 const transactionFormat = 1
 
-func GetBlockByNumber(curretnBlock int64, nodeEndpoint string, client *http.Client) (transactions []Transaction, err error) {
-	requestBody := Request{
-		Jsonrpc: "2.0",
-		Method:  "eth_getBlockByNumber",
-		Params:  make([]interface{}, 2),
-		ID:      "getblock.io",
+func GetBlocksByNumber(
+	fromBlock, toBlock int64,
+	nodeEndpoint string,
+	client *http.Client,
+) (blocks []ResponseBlockByNumber, err error) {
+	batchRequestBody := make([]Request, toBlock-fromBlock)
+
+	for blockNumb := fromBlock; blockNumb < toBlock; blockNumb++ {
+		params := make([]interface{}, 2)
+		params[blockNumber] = fmt.Sprintf("0x%x", blockNumb)
+		params[transactionFormat] = true
+
+		batchRequestBody = append(batchRequestBody, Request{
+			Jsonrpc: "2.0",
+			Method:  "eth_getBlockByNumber",
+			Params:  params,
+			ID:      "getblock.io",
+		})
 	}
 
-	requestBody.Params[blockNumber] = fmt.Sprintf("0x%x", curretnBlock)
-	requestBody.Params[transactionFormat] = true
-
-	resp, err := doNodeRequest(requestBody, nodeEndpoint, client)
+	resp, err := doNodeRequest(batchRequestBody, nodeEndpoint, client)
 	if err != nil {
 		return nil, err
 	}
 
-	responseBody := BlockByNumberResponse{}
+	responseBody := make([]ResponseBlockByNumber, toBlock-fromBlock)
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&responseBody)
@@ -33,5 +42,5 @@ func GetBlockByNumber(curretnBlock int64, nodeEndpoint string, client *http.Clie
 		return nil, err
 	}
 
-	return responseBody.Result.Transactions, nil
+	return responseBody, nil
 }

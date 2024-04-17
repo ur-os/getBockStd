@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"icescream/getBlockStd/getBlock"
+	"getBlock/getBlock"
 	"log"
 	"net/http"
 	_ "net/http/pprof"

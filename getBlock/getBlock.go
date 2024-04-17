@@ -2,10 +2,10 @@ package getBlock
 
 import (
 	"fmt"
-	"icescream/getBlockStd/getBlock/aggregation"
-	"icescream/getBlockStd/getBlock/processing"
-	"icescream/getBlockStd/getBlock/requests"
-	"icescream/getBlockStd/getBlock/vault"
+	"getBlock/getBlock/aggregation"
+	"getBlock/getBlock/processing"
+	"getBlock/getBlock/requests"
+	"getBlock/getBlock/vault"
 	"net/http"
 	"runtime"
 	"sync"
@@ -33,7 +33,7 @@ const someWeight = 1
 var maxParallels = someWeight * runtime.GOMAXPROCS(0)
 
 const five = 5
-
+const blockPullingStep = 5
 const upperBorderOfGreed = 25 * time.Millisecond
 
 func (g *GetBlock) GetTop5Addresses() []aggregation.TopAddresses {
@@ -54,9 +54,9 @@ func (g *GetBlock) GetTop5Addresses() []aggregation.TopAddresses {
 
 	wgProcessing := &sync.WaitGroup{}
 
-	for currentBlock := latestBlock.Int64(); currentBlock > latestBlock.Int64()-depth; currentBlock-- {
+	for currentBlock := latestBlock.Int64(); currentBlock > latestBlock.Int64()-depth; currentBlock += blockPullingStep {
 		wgProcessing.Add(1)
-		go g.transactionsToStream(wgProcessing, currentBlock, chTransactions)
+		go g.transactionsToStream(wgProcessing, currentBlock, currentBlock+blockPullingStep, chTransactions)
 		time.Sleep(upperBorderOfGreed)
 	}
 
@@ -74,15 +74,18 @@ func (g *GetBlock) GetTop5Addresses() []aggregation.TopAddresses {
 	return topFive
 }
 
-func (g *GetBlock) transactionsToStream(wg *sync.WaitGroup, currentBlock int64, chTx chan []requests.Transaction) {
+func (g *GetBlock) transactionsToStream(wg *sync.WaitGroup, fromBlock, toBlock int64, chTxs chan []requests.Transaction) {
 	defer wg.Done()
 
-	blockTransactions, err := requests.GetBlockByNumber(currentBlock, g.nodeEndpoint, g.client)
+	blocks, err := requests.GetBlocksByNumber(fromBlock, toBlock, g.nodeEndpoint, g.client)
 	if err != nil {
-		fmt.Printf("Unable to get block %d. Reason: %s", currentBlock, err.Error())
+		fmt.Printf("Unable to get blocks %d-%d. Reason: %s", fromBlock, toBlock, err.Error())
 	}
 
-	chTx <- blockTransactions
+	for i := 0; i < blockPullingStep; i++ {
+		chTxs <- blocks[i].Result.Transactions
+	}
+
 }
 
 func (g *GetBlock) processBlock(wg *sync.WaitGroup, chTransactions <-chan []requests.Transaction) {
