@@ -1,4 +1,4 @@
-package processing
+package parse
 
 const (
 	erc20TransferHash     = "0xa9059cbb"
@@ -9,7 +9,7 @@ const uint256Size = 64
 
 const hexadecimalPrefix = "0x"
 
-func ParseInput(transactionInput string) (from, to string) {
+func Input(transactionInput string) (from, to string) {
 	if len(transactionInput) < 10+2*64 {
 		return
 	}

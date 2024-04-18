@@ -25,6 +25,7 @@ func (v *Vault) Set(key string, value int) {
 }
 
 func (v *Vault) Get(key string) int {
+	key = strings.ToLower(key)
 	v.RLock()
 	defer v.RUnlock()
 

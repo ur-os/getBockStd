@@ -12,12 +12,8 @@ type ResponseBlockNumber struct {
 	ID      string `json:"id"`
 	Result  string `json:"result"`
 }
-
 type ResponseBlockByNumber struct {
-	Error struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-	} `json:"error,omitempty"`
+	Error   error  `json:"error,omitempty"`
 	Jsonrpc string `json:"jsonrpc,omitempty"`
 	ID      string `json:"id,omitempty"`
 	Result  struct {

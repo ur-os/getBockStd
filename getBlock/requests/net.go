@@ -4,15 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 func doNodeRequest(body interface{}, nodeEndpoint string) (*http.Response, error) {
-	requestBodyBytes, err := json.MarshalIndent(&body, "", "\t")
+	requestBodyBytes, err := json.Marshal(&body)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +22,6 @@ func doNodeRequest(body interface{}, nodeEndpoint string) (*http.Response, error
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Length", strconv.Itoa(len(requestBodyBytes)))
 	req.Header.Set("Accept", "*/*")
-	//req.Header.Set("User-Agent", "PostmanRuntime/7.37.3")
 	req.Header.Set("Connection", "keep-alive")
 
 	client := &http.Client{}
@@ -40,13 +36,4 @@ func doNodeRequest(body interface{}, nodeEndpoint string) (*http.Response, error
 	}
 
 	return resp, nil
-}
-
-func printBody(resp http.Response) {
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bodyString := string(bodyBytes)
-	fmt.Printf("body: %s", bodyString)
 }

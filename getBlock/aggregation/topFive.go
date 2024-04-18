@@ -10,6 +10,8 @@ func GetTopAddresses(topAmount int, vault map[string]int) (top []TopAddresses, e
 		topAmount = len(vault)
 	}
 
+	top = []TopAddresses{}
+
 	for i := 0; i < topAmount; i++ {
 		var maxAddress TopAddresses
 

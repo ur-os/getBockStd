@@ -1,29 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"getBlock/getBlock"
+	"log"
+	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"time"
 )
 
 func main() {
-	os.Getenv("API_KEY")
+	service := getBlock.NewService()
 
-	//nodeEndpoint := "https://go.getblock.io/e3c21d46fb4545d6bff3df29c42fd4a0"
+	http.HandleFunc("/getTopFiveUserActivity", service.GetTopFiveUserActivity) // Update this line of code
 
-	nodeEndpoint := "https://rpc.mevblocker.io"
-	_ = nodeEndpoint
+	port := os.Getenv("GET_BLOCK_PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	start := time.Now()
-	service := getBlock.New(nodeEndpoint)
-	topFive := service.GetTop5Addresses()
-	end := time.Now()
-
-	fmt.Printf("bench: %f seconds\n", end.Sub(start).Seconds())
-
-	for _, val := range topFive {
-		fmt.Printf("address: %s activity: %d\n", val.Address, val.Count)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal(err)
 	}
 }
