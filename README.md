@@ -7,7 +7,7 @@ Metric increases per each transaction between addresses.
 #### Example
 Alice has sent 100 USDC
 Alice received 5 DAI
----
+
 Alice's Activity metric equal 2
 
 ## Setting up
